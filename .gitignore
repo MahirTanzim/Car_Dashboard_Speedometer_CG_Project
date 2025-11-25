@@ -3,3 +3,6 @@
 
 # Ignore VS Code workspace settings and extensions
 .vscode/
+# Ignore Python bytecode cache directories
+__pycache__/
+**/__pycache__/
