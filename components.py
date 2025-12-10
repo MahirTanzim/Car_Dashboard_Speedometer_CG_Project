@@ -6,7 +6,67 @@ Contains: Speedometer, RPM meter, Fuel meter, indicators, displays
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 import math
-from algorithms import midpoint_circle, dda_line, draw_filled_circle
+from algorithms import *
+def draw_half_circle_frame(cx, cy, radius, thickness=12):
+    """
+    Draw a half-circle frame centered at (cx, cy).
+    Uses midpoint circle algorithm but only top half.
+    thickness controls border thickness.
+    """
+    for r in range(radius, radius - thickness, -1):
+        x = 0
+        y = r
+        d = 1 - r
+
+        # Draw only top half (y >= center_y)
+        while x <= y:
+            # Top-right
+            draw_point(cx + x, cy + y)
+            draw_point(cx + y, cy + x)
+
+            # Top-left
+            draw_point(cx - x, cy + y)
+            draw_point(cx - y, cy + x)
+
+            # midpoint logic
+            if d < 0:
+                d = d + 2 * x + 3
+            else:
+                d = d + 2 * (x - y) + 5
+                y -= 1
+            x += 1
+def fill_half_circle_fast(cx, cy, radius, layers=40):
+    """
+    Fast filled half-circle using concentric midpoint semicircles.
+    layers = number of rings (40 is smooth enough and fast)
+    """
+    step = radius // layers
+    if step < 1:
+        step = 1
+
+    for r in range(radius, 0, -step):
+        x = 0
+        y = r
+        d = 1 - r
+
+        # Draw TOP HALF ONLY
+        while x <= y:
+            # Top-right
+            draw_point(cx + x, cy + y)
+            draw_point(cx + y, cy + x)
+
+            # Top-left
+            draw_point(cx - x, cy + y)
+            draw_point(cx - y, cy + x)
+
+            if d < 0:
+                d += 2 * x + 3
+            else:
+                d += 2 * (x - y) + 5
+                y -= 1
+            x += 1
+
+    
 
 def draw_speedometer(center_x, center_y, radius, speed):
     """Draw speedometer gauge (0-230 km/h) with warning zone"""

@@ -19,7 +19,7 @@ right_turn = False
 fuel_warning = False
 last_activity_time = 0
 fuel_consumption_counter = 0
-
+half_circle_drawn = False
 # Smooth animation variables
 target_speed = 0  # Smooth animation target for speed
 target_fuel = 100  # Smooth animation target for fuel (for smooth refill)
@@ -86,7 +86,16 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
     initialize()
-    
+    # Fill (fast)
+    # glColor3f(0.10, 0.12, 0.15)
+    # fill_half_circle_fast(500, 200, 350, layers=40)
+
+    # Border
+    glColor3f(0.0, 0.8, 0.9)
+    draw_half_circle_frame(500, 200, 350, thickness=8)
+
+
+
     # Update values
     update_rpm()
     update_engine_temp()
@@ -243,3 +252,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
