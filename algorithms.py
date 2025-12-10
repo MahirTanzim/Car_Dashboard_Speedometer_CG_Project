@@ -74,9 +74,35 @@ def draw_filled_circle(radius, x0, y0):
     # center
     glVertex2f(x0, y0)
     for i in range(segments + 1):
-        theta = 2.0 * 3.14159265 * i / segments
-        cx = x0 + radius * math.cos(theta)
-        cy = y0 + radius * math.sin(theta)
+        theta = 2.0 * math.pi * i / segments
+        # use rotate helper for unit x vector then scale by radius
+        ux, uy = rotate_point(1.0, 0.0, theta)
+        cx = x0 + radius * ux
+        cy = y0 + radius * uy
         glVertex2f(cx, cy)
     glEnd()
+
+
+def rotate_point(x, y, theta):
+    """Rotate point (x,y) by angle theta (radians). Returns (xr, yr)."""
+    c = math.cos(theta)
+    s = math.sin(theta)
+    xr = x * c - y * s
+    yr = x * s + y * c
+    return xr, yr
+
+
+def scale_point(x, y, sx, sy=None):
+    """Scale point (x,y) by (sx, sy). If sy is None, uniform scale used."""
+    if sy is None:
+        sy = sx
+    return x * sx, y * sy
+
+
+def translate_point(x, y, tx, ty):
+    """Translate point (x,y) by (tx,ty)."""
+    return x + tx, y + ty
+
+
+
         

@@ -96,16 +96,19 @@ def draw_speedometer(center_x, center_y, radius, speed):
         # Major tick marks every 20 km/h
         glColor3f(0.88, 0.88, 0.90) if i < 200 else glColor3f(0.75, 0.25, 0.25)
         glLineWidth(3)
-        x1 = center_x + (radius - 18) * math.cos(angle_rad)
-        y1 = center_y + (radius - 18) * math.sin(angle_rad)
-        x2 = center_x + (radius - 32) * math.cos(angle_rad)
-        y2 = center_y + (radius - 32) * math.sin(angle_rad)
+        ux, uy = rotate_point(radius - 18, 0.0, angle_rad)
+        x1 = center_x + ux
+        y1 = center_y + uy
+        ux2, uy2 = rotate_point(radius - 32, 0.0, angle_rad)
+        x2 = center_x + ux2
+        y2 = center_y + uy2
         dda_line(int(x1), int(y1), int(x2), int(y2))
         
         # Numbers at every 20 km/h for clarity
         glColor3f(0.82, 0.82, 0.85)
-        x_text = center_x + (radius - 50) * math.cos(angle_rad)
-        y_text = center_y + (radius - 50) * math.sin(angle_rad)
+        ux_t, uy_t = rotate_point(radius - 50, 0.0, angle_rad)
+        x_text = center_x + ux_t
+        y_text = center_y + uy_t
         draw_number(int(x_text), int(y_text), i)
     
     # Draw small tick marks for every 10 km/h (between major marks)
@@ -115,10 +118,12 @@ def draw_speedometer(center_x, center_y, radius, speed):
         angle_rad = math.radians(angle)
         
         glColor3f(0.72, 0.72, 0.75)
-        x1 = center_x + (radius - 20) * math.cos(angle_rad)
-        y1 = center_y + (radius - 20) * math.sin(angle_rad)
-        x2 = center_x + (radius - 27) * math.cos(angle_rad)
-        y2 = center_y + (radius - 27) * math.sin(angle_rad)
+        ux, uy = rotate_point(radius - 20, 0.0, angle_rad)
+        x1 = center_x + ux
+        y1 = center_y + uy
+        ux2, uy2 = rotate_point(radius - 27, 0.0, angle_rad)
+        x2 = center_x + ux2
+        y2 = center_y + uy2
         dda_line(int(x1), int(y1), int(x2), int(y2))
     
     # Draw needle with smooth appearance
@@ -165,16 +170,19 @@ def draw_rpm_meter(center_x, center_y, radius, rpm):
         glColor3f(0.88, 0.88, 0.90) if i < 7 else glColor3f(0.75, 0.25, 0.25)
         glLineWidth(2.5)
         
-        x1 = center_x + (radius - 15) * math.cos(angle_rad)
-        y1 = center_y + (radius - 15) * math.sin(angle_rad)
-        x2 = center_x + (radius - 25) * math.cos(angle_rad)
-        y2 = center_y + (radius - 25) * math.sin(angle_rad)
+        ux, uy = rotate_point(radius - 15, 0.0, angle_rad)
+        x1 = center_x + ux
+        y1 = center_y + uy
+        ux2, uy2 = rotate_point(radius - 25, 0.0, angle_rad)
+        x2 = center_x + ux2
+        y2 = center_y + uy2
         dda_line(int(x1), int(y1), int(x2), int(y2))
         
         # Numbers
         glColor3f(0.82, 0.82, 0.85)
-        x_text = center_x + (radius - 40) * math.cos(angle_rad)
-        y_text = center_y + (radius - 40) * math.sin(angle_rad)
+        ux_t, uy_t = rotate_point(radius - 40, 0.0, angle_rad)
+        x_text = center_x + ux_t
+        y_text = center_y + uy_t
         draw_number(int(x_text), int(y_text), i)
     
     # Draw needle with smooth animation
@@ -188,9 +196,9 @@ def draw_rpm_meter(center_x, center_y, radius, rpm):
     
     # Label
     glColor3f(0.78, 0.78, 0.80)
-    draw_text(center_x - 35, center_y - 85, "ENGINE")
+    # draw_text(center_x - 35, center_y - 85, "ENGINE")
     glColor3f(0.82, 0.82, 0.85)
-    draw_text(center_x - 50, center_y - 100, "RPM x1000")
+    draw_text(center_x - 35, center_y - 54, "RPM x1000")
 
 def draw_fuel_meter(center_x, center_y, radius, fuel_level):
     """Draw fuel meter (0-100%) with low fuel warning zone"""
@@ -221,10 +229,12 @@ def draw_fuel_meter(center_x, center_y, radius, fuel_level):
         glColor3f(0.75, 0.25, 0.25) if i < 25 else glColor3f(0.88, 0.88, 0.90)
         glLineWidth(2.5)
         
-        x1 = center_x + (radius - 15) * math.cos(angle_rad)
-        y1 = center_y + (radius - 15) * math.sin(angle_rad)
-        x2 = center_x + (radius - 25) * math.cos(angle_rad)
-        y2 = center_y + (radius - 25) * math.sin(angle_rad)
+        ux, uy = rotate_point(radius - 15, 0.0, angle_rad)
+        x1 = center_x + ux
+        y1 = center_y + uy
+        ux2, uy2 = rotate_point(radius - 25, 0.0, angle_rad)
+        x2 = center_x + ux2
+        y2 = center_y + uy2
         dda_line(int(x1), int(y1), int(x2), int(y2))
     
     # E and F labels
@@ -244,9 +254,9 @@ def draw_fuel_meter(center_x, center_y, radius, fuel_level):
     
     # Label
     glColor3f(0.78, 0.78, 0.80)
-    draw_text(center_x - 15, center_y - 65, "FUEL")
+    draw_text(center_x - 20, center_y -40, "FUEL %")
     glColor3f(0.82, 0.82, 0.85)
-    draw_text(center_x - 10, center_y - 75, "%")
+    # draw_text(center_x, center_y - 50, "%")
 
 def draw_needle_smooth(cx, cy, length, value, min_val, max_val):
     """Draw gauge needle with enhanced appearance"""
@@ -256,8 +266,9 @@ def draw_needle_smooth(cx, cy, length, value, min_val, max_val):
     angle = 225 - normalized * 270  # 225° to -45°
     angle_rad = math.radians(angle)
     
-    x_end = cx + length * math.cos(angle_rad)
-    y_end = cy + length * math.sin(angle_rad)
+    ux_end, uy_end = rotate_point(length, 0.0, angle_rad)
+    x_end = cx + ux_end
+    y_end = cy + uy_end
     
     # Needle shadow (slightly offset, dark)
     glColor3f(0.12, 0.08, 0.08)
@@ -285,10 +296,12 @@ def draw_arc_segment(cx, cy, radius, angle_start, angle_end):
         angle1_rad = math.radians(angle1)
         angle2_rad = math.radians(angle2)
         
-        x1 = cx + radius * math.cos(angle1_rad)
-        y1 = cy + radius * math.sin(angle1_rad)
-        x2 = cx + radius * math.cos(angle2_rad)
-        y2 = cy + radius * math.sin(angle2_rad)
+        ux1, uy1 = rotate_point(radius, 0.0, angle1_rad)
+        x1 = cx + ux1
+        y1 = cy + uy1
+        ux2, uy2 = rotate_point(radius, 0.0, angle2_rad)
+        x2 = cx + ux2
+        y2 = cy + uy2
         
         dda_line(int(x1), int(y1), int(x2), int(y2))
 

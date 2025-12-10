@@ -10,6 +10,9 @@ import time
 import math
 import random
 from components import *
+from scene import *
+
+
 
 
 # Global variables for dashboard state
@@ -49,6 +52,7 @@ oncoming_cars = []
 trees = []
 clouds = []
 
+
 def initialize():
     """Initialize OpenGL settings"""
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -72,96 +76,18 @@ def initialize_trees():
             'x': -18 - random.uniform(0, 3),
             'z': z + random.uniform(-5, 5),
             'height': 8 + random.uniform(0, 4),
-            'type': random.choice(['pine', 'round'])
+            'type': random.choice(['pine'])
         })
         # Right side trees
         trees.append({
             'x': 18 + random.uniform(0, 3),
             'z': z + random.uniform(-5, 5),
             'height': 8 + random.uniform(0, 4),
-            'type': random.choice(['pine', 'round'])
+            'type': random.choice(['pine'])
         })
 
-def draw_house_2d(cx, cy, scale=1.0):
-    """Simple 2D house for lightweight roadside rendering"""
-    w = 40 * scale
-    h = 50 * scale
-    # Body
-    glColor3f(0.6, 0.4, 0.2)
-    glBegin(GL_QUADS)
-    glVertex2f(cx - w/2, cy)
-    glVertex2f(cx + w/2, cy)
-    glVertex2f(cx + w/2, cy + h)
-    glVertex2f(cx - w/2, cy + h)
-    glEnd()
-    # Roof
-    glColor3f(0.35, 0.12, 0.10)
-    glBegin(GL_TRIANGLES)
-    glVertex2f(cx - w/2 - 4*scale, cy + h)
-    glVertex2f(cx + w/2 + 4*scale, cy + h)
-    glVertex2f(cx, cy + h + 18*scale)
-    glEnd()
 
-def draw_tree_2d(cx, cy, scale=1.0, tree_type='round'):
-    """Simple 2D tree (pine or round crown)"""
-    trunk_w = 6 * scale
-    trunk_h = 14 * scale
-    glColor3f(0.45, 0.28, 0.12)
-    glBegin(GL_QUADS)
-    glVertex2f(cx - trunk_w/2, cy)
-    glVertex2f(cx + trunk_w/2, cy)
-    glVertex2f(cx + trunk_w/2, cy + trunk_h)
-    glVertex2f(cx - trunk_w/2, cy + trunk_h)
-    glEnd()
-    if tree_type == 'pine':
-        glColor3f(0.08, 0.45, 0.12)
-        for i in range(3):
-            s = scale * (1.0 - i*0.18)
-            y = cy + trunk_h + i * (12*scale)
-            glBegin(GL_TRIANGLES)
-            glVertex2f(cx, y + 18*s)
-            glVertex2f(cx - 18*s, y)
-            glVertex2f(cx + 18*s, y)
-            glEnd()
-    else:
-        glColor3f(0.12, 0.48, 0.16)
-        draw_filled_circle(int(18*scale), int(cx), int(cy + trunk_h + 8*scale))
 
-def draw_car_2d(cx, cy, scale=1.0, color=(0.8,0.0,0.0), wheel_angle=0.0, taillight_on=False):
-    """Simple 2D back-view car sprite"""
-    w = 60 * scale
-    h = 40 * scale
-    # body
-    glColor3f(*color)
-    glBegin(GL_QUADS)
-    glVertex2f(cx - w/2, cy)
-    glVertex2f(cx + w/2, cy)
-    glVertex2f(cx + w/2, cy + h)
-    glVertex2f(cx - w/2, cy + h)
-    glEnd()
-    # rear window
-    glColor3f(0.12, 0.22, 0.35)
-    glBegin(GL_QUADS)
-    glVertex2f(cx - w*0.22, cy + h*0.45)
-    glVertex2f(cx + w*0.22, cy + h*0.45)
-    glVertex2f(cx + w*0.28, cy + h*0.78)
-    glVertex2f(cx - w*0.28, cy + h*0.78)
-    glEnd()
-    # taillights
-    if taillight_on:
-        glColor3f(1.0, 0.2, 0.2)
-    else:
-        glColor3f(0.6, 0.15, 0.15)
-    glBegin(GL_QUADS)
-    glVertex2f(cx - w/2 + 6*scale, cy + h*0.1)
-    glVertex2f(cx - w/2 + 6*scale + 8*scale, cy + h*0.1)
-    glVertex2f(cx - w/2 + 6*scale + 8*scale, cy + h*0.28)
-    glVertex2f(cx - w/2 + 6*scale, cy + h*0.28)
-    glVertex2f(cx + w/2 - 6*scale - 8*scale, cy + h*0.1)
-    glVertex2f(cx + w/2 - 6*scale, cy + h*0.1)
-    glVertex2f(cx + w/2 - 6*scale, cy + h*0.28)
-    glVertex2f(cx + w/2 - 6*scale - 8*scale, cy + h*0.28)
-    glEnd()
 
 def initialize_clouds():
     """Create initial clouds in the sky"""
@@ -211,314 +137,6 @@ def consume_fuel():
     else:
         fuel_warning = False
 
-def draw_3d_road():
-    """Draw the road with improved texturing"""
-    near_z = camera_z
-    far_z = camera_z + 500
-    
-    # Main road
-    glColor3f(0.3, 0.3, 0.3)
-    glBegin(GL_QUADS)
-    glVertex3f(-10, 0, near_z)
-    glVertex3f(10, 0, near_z)
-    glVertex3f(10, 0, far_z)
-    glVertex3f(-10, 0, far_z)
-    glEnd()
-
-    # Road edges
-    glColor3f(0.8, 0.8, 0.8)
-    glLineWidth(3)
-    glBegin(GL_LINES)
-    glVertex3f(-5, 0.01, near_z)
-    glVertex3f(-5, 0.01, far_z)
-    glVertex3f(5, 0.01, near_z)
-    glVertex3f(5, 0.01, far_z)
-    glEnd()
-
-    # Center dashes
-    dash_length = 20
-    gap = 15
-    pattern_length = dash_length + gap
-    glColor3f(1, 0.95, 0)
-    glLineWidth(3)
-    current_z = near_z - ((near_z % pattern_length) - gap)
-    while current_z < far_z:
-        dash_start = current_z
-        dash_end = min(current_z + dash_length, far_z)
-        if dash_start < far_z:
-            glBegin(GL_LINES)
-            glVertex3f(0, 0.01, dash_start)
-            glVertex3f(0, 0.01, dash_end)
-            glEnd()
-        current_z += pattern_length
-
-def draw_ground():
-    """Draw grass ground on sides of road"""
-    near_z = camera_z
-    far_z = camera_z + 500
-    
-    # Left grass
-    glColor3f(0.2, 0.5, 0.2)
-    glBegin(GL_QUADS)
-    glVertex3f(-50, 0, near_z)
-    glVertex3f(-10, 0, near_z)
-    glVertex3f(-10, 0, far_z)
-    glVertex3f(-50, 0, far_z)
-    glEnd()
-    
-    # Right grass
-    glBegin(GL_QUADS)
-    glVertex3f(10, 0, near_z)
-    glVertex3f(50, 0, near_z)
-    glVertex3f(50, 0, far_z)
-    glVertex3f(10, 0, far_z)
-    glEnd()
-
-def draw_tree(x, y, z, height, tree_type):
-    """Draw a tree - either pine or round"""
-    glPushMatrix()
-    glTranslatef(x, y, z)
-    
-    # Trunk
-    glColor3f(0.4, 0.25, 0.1)
-    glBegin(GL_QUADS)
-    trunk_width = 0.5
-    trunk_height = height * 0.4
-    # Front
-    glVertex3f(-trunk_width, 0, 0)
-    glVertex3f(trunk_width, 0, 0)
-    glVertex3f(trunk_width, trunk_height, 0)
-    glVertex3f(-trunk_width, trunk_height, 0)
-    # Back
-    glVertex3f(-trunk_width, 0, 0.5)
-    glVertex3f(trunk_width, 0, 0.5)
-    glVertex3f(trunk_width, trunk_height, 0.5)
-    glVertex3f(-trunk_width, trunk_height, 0.5)
-    glEnd()
-    
-    if tree_type == 'pine':
-        # Pine tree - triangular layers
-        glColor3f(0.1, 0.4, 0.1)
-        layers = 3
-        for i in range(layers):
-            base_y = trunk_height + i * (height * 0.15)
-            base_size = 2.5 - i * 0.6
-            
-            glBegin(GL_TRIANGLES)
-            # Front triangle
-            glVertex3f(0, base_y + height * 0.2, 0.25)
-            glVertex3f(-base_size, base_y, 0)
-            glVertex3f(base_size, base_y, 0)
-            # Back triangle
-            glVertex3f(0, base_y + height * 0.2, 0.5)
-            glVertex3f(-base_size, base_y, 0.5)
-            glVertex3f(base_size, base_y, 0.5)
-            # Side triangles
-            glVertex3f(0, base_y + height * 0.2, 0.25)
-            glVertex3f(-base_size, base_y, 0)
-            glVertex3f(-base_size, base_y, 0.5)
-            
-            glVertex3f(0, base_y + height * 0.2, 0.25)
-            glVertex3f(base_size, base_y, 0)
-            glVertex3f(base_size, base_y, 0.5)
-            glEnd()
-    else:
-        # Round tree - sphere-like crown
-        glColor3f(0.15, 0.5, 0.15)
-        crown_y = trunk_height + height * 0.3
-        crown_size = 2.0
-        
-        # Rounded crown using stacked triangle fans (front + back) for smoothness
-        glColor3f(0.15, 0.5, 0.15)
-        segments = 20
-        layers = 6
-        crown_height = height * 0.4
-        for li in range(layers):
-            t = li / float(max(1, layers - 1))
-            # vertical position for this layer (from bottom to top of crown)
-            y_layer = crown_y + t * crown_height
-            # radius tapers slightly towards the top
-            radius = crown_size * (1.0 - 0.6 * t)
-
-            # front face fan (z = 0)
-            glBegin(GL_TRIANGLE_FAN)
-            glVertex3f(0.0, y_layer, 0.0)
-            for i in range(segments + 1):
-                theta = 2.0 * 3.14159265 * i / segments
-                x = radius * math.cos(theta)
-                z_off = radius * math.sin(theta) * 0.25  # slight depth curve
-                glVertex3f(x, y_layer, z_off)
-            glEnd()
-
-            # back face fan (z = 0.5) to give crown thickness
-            glBegin(GL_TRIANGLE_FAN)
-            glVertex3f(0.0, y_layer, 0.5)
-            for i in range(segments + 1):
-                theta = 2.0 * 3.14159265 * i / segments
-                x = radius * math.cos(theta)
-                z_off = 0.5 + radius * math.sin(theta) * 0.15
-                glVertex3f(x, y_layer, z_off)
-            glEnd()
-    
-    glPopMatrix()
-
-def draw_cloud(x, y, z, size):
-    """Draw a simple cloud"""
-    glPushMatrix()
-    glTranslatef(x, y, z)
-    glColor4f(1.0, 1.0, 1.0, 0.8)
-    
-    # Draw multiple overlapping ellipsoids for cloud effect
-    positions = [
-        (0, 0, 0),
-        (-size*0.3, size*0.1, 0),
-        (size*0.3, size*0.1, 0),
-        (-size*0.15, -size*0.2, 0),
-        (size*0.15, -size*0.2, 0)
-    ]
-    
-    for px, py, pz in positions:
-        glPushMatrix()
-        glTranslatef(px, py, pz)
-        # Draw multiple concentric, scaled fans to make the puff rounder/softer
-        base_scale_x = size * 0.4
-        base_scale_y = size * 0.25
-        base_scale_z = size * 0.3
-
-        # Draw 3 concentric fans with decreasing alpha and slightly larger radii
-        segments = 28
-        for layer in range(3, 0, -1):
-            s = layer / 3.0
-            alpha = 0.12 + 0.28 * s  # inner layers more opaque
-            glColor4f(1.0, 1.0, 1.0, alpha)
-            glPushMatrix()
-            glScalef(base_scale_x * (1.0 + (3-layer) * 0.15), base_scale_y * (1.0 + (3-layer) * 0.12), base_scale_z)
-            glBegin(GL_TRIANGLE_FAN)
-            glVertex3f(0.0, 0.0, 0.0)
-            for i in range(segments + 1):
-                theta = 2.0 * 3.14159265 * i / segments
-                cx = math.cos(theta)
-                cy = math.sin(theta)
-                glVertex3f(cx, cy, 0.0)
-            glEnd()
-            glPopMatrix()
-        glPopMatrix()
-    
-    glPopMatrix()
-
-def draw_3d_house(x, y, z):
-    """Draw a house on the roadside"""
-    glPushMatrix()
-    glTranslatef(x, y, z)
-    glColor3f(0.6, 0.4, 0.2)
-    
-    # Base
-    glBegin(GL_QUADS)
-    # Front
-    glVertex3f(-4, 0, -3)
-    glVertex3f(4, 0, -3)
-    glVertex3f(4, 6, -3)
-    glVertex3f(-4, 6, -3)
-    # Back
-    glVertex3f(-4, 0, 3)
-    glVertex3f(4, 0, 3)
-    glVertex3f(4, 6, 3)
-    glVertex3f(-4, 6, 3)
-    # Left
-    glVertex3f(-4, 0, -3)
-    glVertex3f(-4, 0, 3)
-    glVertex3f(-4, 6, 3)
-    glVertex3f(-4, 6, -3)
-    # Right
-    glVertex3f(4, 0, -3)
-    glVertex3f(4, 0, 3)
-    glVertex3f(4, 6, 3)
-    glVertex3f(4, 6, -3)
-    glEnd()
-    
-    # Windows
-    glColor3f(0.2, 0.4, 0.6)
-    glBegin(GL_QUADS)
-    # Left window
-    glVertex3f(-3, 3.5, -3.01)
-    glVertex3f(-1.5, 3.5, -3.01)
-    glVertex3f(-1.5, 5.5, -3.01)
-    glVertex3f(-3, 5.5, -3.01)
-    # Right window
-    glVertex3f(1.5, 3.5, -3.01)
-    glVertex3f(3, 3.5, -3.01)
-    glVertex3f(3, 5.5, -3.01)
-    glVertex3f(1.5, 5.5, -3.01)
-    glEnd()
-    
-    # Roof
-    glColor3f(0.5, 0.2, 0.1)
-    glBegin(GL_TRIANGLES)
-    glVertex3f(-4, 6, -3)
-    glVertex3f(4, 6, -3)
-    glVertex3f(0, 9, 0)
-    glVertex3f(-4, 6, 3)
-    glVertex3f(4, 6, 3)
-    glVertex3f(0, 9, 0)
-    glEnd()
-    glPopMatrix()
-
-def draw_3d_car(x, y, z, color):
-    """Draw a realistic 3D car"""
-    glPushMatrix()
-    glTranslatef(x, y, z)
-    
-    # Main car body
-    glColor3f(*color)
-    glBegin(GL_QUADS)
-    # Front
-    glVertex3f(-0.7, 0, -2)
-    glVertex3f(0.7, 0, -2)
-    glVertex3f(0.8, 0.9, -2)
-    glVertex3f(-0.8, 0.9, -2)
-    # Back
-    glVertex3f(-0.8, 0, 2)
-    glVertex3f(0.8, 0, 2)
-    glVertex3f(0.85, 0.85, 2)
-    glVertex3f(-0.85, 0.85, 2)
-    # Left side
-    glVertex3f(-0.8, 0, -2)
-    glVertex3f(-0.8, 0, 2)
-    glVertex3f(-0.85, 0.85, 2)
-    glVertex3f(-0.8, 0.9, -2)
-    # Right side
-    glVertex3f(0.8, 0, -2)
-    glVertex3f(0.8, 0, 2)
-    glVertex3f(0.85, 0.85, 2)
-    glVertex3f(0.8, 0.9, -2)
-    # Top
-    glVertex3f(-0.7, 0.9, -2)
-    glVertex3f(0.7, 0.9, -2)
-    glVertex3f(0.75, 0.85, 2)
-    glVertex3f(-0.75, 0.85, 2)
-    glEnd()
-    
-    # Windshield
-    glColor3f(0.3, 0.5, 0.8)
-    glBegin(GL_QUADS)
-    glVertex3f(-0.6, 0.4, -2.02)
-    glVertex3f(0.6, 0.4, -2.02)
-    glVertex3f(0.7, 0.85, -2.02)
-    glVertex3f(-0.7, 0.85, -2.02)
-    glEnd()
-    
-    # Headlights
-    glColor3f(1.0, 1.0, 0.7)
-    glBegin(GL_TRIANGLES)
-    glVertex3f(-0.55, 0.15, -2.02)
-    glVertex3f(-0.35, 0.15, -2.02)
-    glVertex3f(-0.45, 0.35, -2.02)
-    glVertex3f(0.35, 0.15, -2.02)
-    glVertex3f(0.55, 0.15, -2.02)
-    glVertex3f(0.45, 0.35, -2.02)
-    glEnd()
-    
-    glPopMatrix()
 
 def display():
     """Main display function"""
@@ -606,14 +224,14 @@ def display():
             right_turn = False
     
     # Draw dashboard components
-    draw_speedometer(700, 200, 120, speed)
-    draw_rpm_meter(340, 150, 80, rpm)
-    draw_fuel_meter(980, 130, 60, fuel_level)
-    draw_digital_display(610, 70, 140, 40, speed, "km/h")
-    draw_digital_display(1100, 200, 140, 40, engine_temp, "°C")
-    draw_turn_arrow(550, 280, 'left', left_blink_show)
-    draw_turn_arrow(850, 280, 'right', right_blink_show)
-    draw_indicator_light(980, 250, 10, fuel_warning, (1.0, 0.0, 0.0))
+    draw_speedometer(770, 210, 120, speed)
+    draw_rpm_meter(560, 140, 80, rpm)
+    draw_fuel_meter(980, 130, 70, fuel_level)
+    draw_digital_display(695, 30, 140, 40, speed, "km/h")
+    draw_digital_display(910, 200, 70, 40, engine_temp, "°C")
+    draw_turn_arrow(515, 280, 'left', left_blink_show)
+    draw_turn_arrow(962, 280, 'right', right_blink_show)
+    draw_indicator_light(1050, 50, 10, fuel_warning, (1.0, 0.0, 0.0))
     
     # Instructions
     glColor3f(0.65, 0.66, 0.68)
@@ -738,7 +356,17 @@ def animate(value):
     
     glutPostRedisplay()
     glutTimerFunc(16, animate, 0)
-
+def initialize():
+    """Initialize OpenGL settings"""
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+    glEnable(GL_DEPTH_TEST)
+    glClearColor(0.4, 0.6, 0.9, 1.0)  # Sky blue background
+    
+    # Initialize trees on roadside
+    initialize_trees()
+    
+    # Initialize clouds
+    initialize_clouds()
 def main():
     """Main function"""
     global last_activity_time
