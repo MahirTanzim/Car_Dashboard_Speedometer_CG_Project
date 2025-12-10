@@ -64,7 +64,9 @@ def midpoint_circle(radius, x0, y0):
         x += 1
         draw_circle_points(x, y, x0, y0)
 
+
 def draw_filled_circle(radius, x0, y0):
     """Draw a filled circle"""
     for r in range(radius, 0, -1):
         midpoint_circle(r, x0, y0)
+        

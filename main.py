@@ -9,7 +9,12 @@ from OpenGL.GLU import *
 import time
 from components import *
 
+
 # Global variables for dashboard state
+
+# Window size constants
+WINDOW_WIDTH = 1500
+WINDOW_HEIGHT = 1000
 speed = 0
 rpm = 0
 fuel_level = 100
@@ -27,15 +32,23 @@ blink_counter = 0  # For blinking turn signals
 left_blink_time = 0  # Track when left turn was activated
 right_blink_time = 0  # Track when right turn was activated
 
+# Key state tracking for continuous movement
+keys_pressed = {
+    'up': False,
+    'down': False,
+    'left': False,
+    'right': False
+}
+
 def initialize():
     """Initialize OpenGL settings"""
-    glViewport(0, 0, 1000, 600)
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    glOrtho(0.0, 1000, 0.0, 600, 0.0, 1.0)
+    glOrtho(0.0, WINDOW_WIDTH, 0.0, WINDOW_HEIGHT, 0.0, 1.0)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-    glClearColor(0.0, 0.0, 0.0, 1.0)
+    glClearColor(0.0, 0.0, 0.0, 0.0)
 
 def update_rpm():
     """Update RPM based on speed"""
@@ -91,8 +104,10 @@ def display():
     # fill_half_circle_fast(500, 200, 350, layers=40)
 
     # Border
-    glColor3f(0.0, 0.8, 0.9)
-    draw_half_circle_frame(500, 200, 350, thickness=8)
+    glColor3f(0.75, 0.75, 0.78)
+    draw_half_circle_frame(750, 200, 650, thickness=10)
+    # glColor3f(0.28, 0.31, 0.26)
+    # draw_half_circle_frame(750, 200, 670, thickness=20)
 
 
 
@@ -128,42 +143,42 @@ def display():
     turn_blink_right = right_blink_show
     
     # Draw dashboard title
-    glColor3f(0.0, 1.0, 0.9)
-    draw_text(320, 570, "=== CAR DASHBOARD SPEEDOMETER ===")
+    glColor3f(0.25, 0.26, 0.28)
+    draw_text(380, 800, "=== CAR DASHBOARD SPEEDOMETER ===")
     
     # Draw main speedometer (center)
-    draw_speedometer(500, 350, 120, speed)
+    draw_speedometer(700, 590, 220, speed)
     
     # Draw RPM meter (left)
-    draw_rpm_meter(200, 350, 100, rpm)
+    draw_rpm_meter(340, 440, 140, rpm)
     
     # Draw fuel meter (right)
-    draw_fuel_meter(800, 350, 100, fuel_level)
+    draw_fuel_meter(980, 420, 100, fuel_level)
     
     # Digital speed display (below speedometer)
-    draw_digital_display(430, 150, 140, 40, speed, "km/h")
+    draw_digital_display(610, 270, 180, 50, speed, "km/h")
     
     # Engine temperature display (below RPM meter)
-    draw_digital_display(130, 150, 140, 40, engine_temp, "°C")
+    draw_digital_display(1000, 600, 180, 50, engine_temp, "°C")
     glColor3f(0.9, 0.9, 0.9)
-    draw_text(140, 130, "Temp")
+    draw_text(160, 110, "Temp")
     
     # Turn signal arrows (below speedometer) - with blinking
-    draw_turn_arrow(400, 100, 'left', turn_blink_left)
-    draw_turn_arrow(570, 100, 'right', turn_blink_right)
+    draw_turn_arrow(1100, 500, 'left', turn_blink_left)
+    draw_turn_arrow(1200, 500, 'right', turn_blink_right)
     
     # Fuel warning LED (below fuel meter)
     if fuel_warning:
-        draw_indicator_light(800, 150, 15, True, (1.0, 0.0, 0.0))
+        draw_indicator_light(1160, 550, 15, True, (1.0, 0.0, 0.0))
     else:
-        draw_indicator_light(800, 150, 15, fuel_level >= 80, (0.0, 1.0, 0.0))
+        draw_indicator_light(1160, 550, 15, fuel_level >= 80, (0.0, 1.0, 0.0))
     
     glColor3f(0.9, 0.9, 0.9)
-    draw_text(770, 130, "Fuel")
+    draw_text(1120, 110, "Fuel")
     
     # Instructions
-    glColor3f(0.5, 0.8, 0.9)
-    draw_text(10, 50, "UP/DOWN: Speed  |  B: Brake  |  F: Refuel  |  LEFT/RIGHT: Turn Signals  |  ESC: Exit")
+    glColor3f(0.65, 0.66, 0.68)
+    draw_text(20, 30, "UP/DOWN: Speed  |  B: Brake  |  F: Refuel  |  LEFT/RIGHT: Turn Signals  |  ESC: Exit")
     
     glutSwapBuffers()
 
@@ -187,20 +202,16 @@ def keyboard(key, x, y):
         fuel_warning = False
 
 def special_keys(key, x, y):
-    """Handle special keys (arrow keys) with slow smooth acceleration"""
-    global speed, target_speed, left_turn, right_turn, last_activity_time, left_blink_time, right_blink_time
+    """Handle special keys (arrow keys) - mark as pressed"""
+    global keys_pressed, left_turn, right_turn, last_activity_time, left_blink_time, right_blink_time
     
     last_activity_time = time.time()
     
     if key == GLUT_KEY_UP:
-        # Speed up with very smooth acceleration (slower increments)
-        if target_speed < 230:
-            target_speed = min(target_speed + 5, 230)  # Reduced from 10 to 5 for slower key response
+        keys_pressed['up'] = True
     
     elif key == GLUT_KEY_DOWN:
-        # Slow down (slower decrements)
-        if target_speed > 0:
-            target_speed = max(target_speed - 5, 0)  # Reduced from 10 to 5 for slower key response
+        keys_pressed['down'] = True
     
     elif key == GLUT_KEY_LEFT:
         # Activate left turn signal and start blink timer
@@ -218,16 +229,41 @@ def special_keys(key, x, y):
     
     glutPostRedisplay()
 
+def special_keys_up(key, x, y):
+    """Handle special keys release (arrow keys up)"""
+    global keys_pressed
+    
+    if key == GLUT_KEY_UP:
+        keys_pressed['up'] = False
+    
+    elif key == GLUT_KEY_DOWN:
+        keys_pressed['down'] = False
+
 def animate(value):
-    """Animation timer function with extra smooth speed transitions"""
-    global speed, target_speed
+    """Animation timer function with continuous key-hold support"""
+    global speed, target_speed, keys_pressed
+    
+    # Continuous speed adjustment based on held keys
+    if keys_pressed['up']:
+        # Speed up continuously while holding UP
+        if target_speed < 230:
+            target_speed += 3  # Continuous increment while held
+            if target_speed > 230:
+                target_speed = 230
+    
+    if keys_pressed['down']:
+        # Slow down continuously while holding DOWN
+        if target_speed > 0:
+            target_speed -= 3  # Continuous decrement while held
+            if target_speed < 0:
+                target_speed = 0
     
     # Speed animation with faster needle movement
     # Increased increments for quicker gauge response
     if speed < target_speed:
-        speed = min(speed + 1.2, target_speed)  # Increased from 0.3 for faster acceleration
+        speed = min(speed + 1.6, target_speed)  # Faster acceleration
     elif speed > target_speed:
-        speed = max(speed - 1.5, target_speed)  # Increased from 0.5 for faster deceleration
+        speed = max(speed - 1.6, target_speed)  # Faster deceleration
     
     glutPostRedisplay()
     glutTimerFunc(16, animate, 0)  # ~60 FPS
@@ -239,13 +275,14 @@ def main():
     
     glutInit()
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
-    glutInitWindowSize(1000, 600)
-    glutInitWindowPosition(100, 100)
+    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
+    glutInitWindowPosition(50, 50)
     wind = glutCreateWindow(b"Car Dashboard Speedometer")
     
     glutDisplayFunc(display)
     glutKeyboardFunc(keyboard)
     glutSpecialFunc(special_keys)
+    glutSpecialUpFunc(special_keys_up)
     glutTimerFunc(0, animate, 0)
     
     glutMainLoop()
