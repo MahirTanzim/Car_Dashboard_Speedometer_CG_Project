@@ -4,6 +4,7 @@ Contains: DDA Line, Midpoint Circle algorithms
 """
 
 from OpenGL.GL import *
+import math
 
 def draw_point(x, y, size=2):
     """Draw a single point at (x, y)"""
@@ -67,6 +68,15 @@ def midpoint_circle(radius, x0, y0):
 
 def draw_filled_circle(radius, x0, y0):
     """Draw a filled circle"""
-    for r in range(radius, 0, -1):
-        midpoint_circle(r, x0, y0)
+    # Use a triangle fan for a smooth filled circle (faster than repeated midpoint circles)
+    segments = max(16, int(radius * 0.5))
+    glBegin(GL_TRIANGLE_FAN)
+    # center
+    glVertex2f(x0, y0)
+    for i in range(segments + 1):
+        theta = 2.0 * 3.14159265 * i / segments
+        cx = x0 + radius * math.cos(theta)
+        cy = y0 + radius * math.sin(theta)
+        glVertex2f(cx, cy)
+    glEnd()
         
