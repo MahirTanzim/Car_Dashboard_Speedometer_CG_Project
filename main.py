@@ -22,7 +22,10 @@ fuel_consumption_counter = 0
 
 # Smooth animation variables
 target_speed = 0  # Smooth animation target for speed
+target_fuel = 100  # Smooth animation target for fuel (for smooth refill)
 blink_counter = 0  # For blinking turn signals
+left_blink_time = 0  # Track when left turn was activated
+right_blink_time = 0  # Track when right turn was activated
 
 def initialize():
     """Initialize OpenGL settings"""
@@ -55,19 +58,16 @@ def update_engine_temp():
         engine_temp -= 0.3
 
 def consume_fuel():
-    """Consume fuel based on speed and activity"""
-    global fuel_level, fuel_consumption_counter, fuel_warning, last_activity_time
+    """Consume fuel based on speed (not activity time)"""
+    global fuel_level, fuel_consumption_counter, fuel_warning
     
-    current_time = time.time()
-    
-    # Check if there's recent activity
-    if current_time - last_activity_time < 5:  # 5 seconds after activity
+    # Only consume fuel when actually moving (speed > 0)
+    if speed > 0:
         fuel_consumption_counter += 1
         
         # Consume fuel every few frames based on speed
-        if fuel_consumption_counter > 30:  # Adjust consumption rate
-            if speed > 0:
-                fuel_level -= 0.5 * (1 + speed / 100.0)  # More speed = more consumption
+        if fuel_consumption_counter > 30:
+            fuel_level -= 0.5 * (1 + speed / 100.0)  # More speed = more consumption
             fuel_consumption_counter = 0
             
             if fuel_level < 0:
@@ -81,7 +81,7 @@ def consume_fuel():
 
 def display():
     """Main display function"""
-    global blink_counter
+    global blink_counter, left_turn, right_turn, left_blink_time, right_blink_time
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
@@ -93,8 +93,30 @@ def display():
     consume_fuel()
     blink_counter += 1
     
-    # Blink effect for turn signals (blink every 30 frames)
-    turn_blink = (blink_counter // 15) % 2 == 0
+    # Blink effect for turn signals - blink twice (4 blinks total = 2 full cycles)
+    # Each blink lasts ~250ms, total = 1 second for 2 complete on-off cycles
+    current_time = time.time()
+    left_blink_show = False
+    right_blink_show = False
+    
+    if left_turn:
+        time_since_left = (current_time - left_blink_time) * 1000  # Convert to ms
+        # 4 states: on(0-250ms), off(250-500ms), on(500-750ms), off(750-1000ms), then auto-off
+        if time_since_left < 1000:
+            left_blink_show = ((int(time_since_left // 250)) % 2) == 0
+        else:
+            left_turn = False
+    
+    if right_turn:
+        time_since_right = (current_time - right_blink_time) * 1000  # Convert to ms
+        # 4 states: on(0-250ms), off(250-500ms), on(500-750ms), off(750-1000ms), then auto-off
+        if time_since_right < 1000:
+            right_blink_show = ((int(time_since_right // 250)) % 2) == 0
+        else:
+            right_turn = False
+    
+    turn_blink_left = left_blink_show
+    turn_blink_right = right_blink_show
     
     # Draw dashboard title
     glColor3f(0.0, 1.0, 0.9)
@@ -118,8 +140,8 @@ def display():
     draw_text(140, 130, "Temp")
     
     # Turn signal arrows (below speedometer) - with blinking
-    draw_turn_arrow(400, 100, 'left', left_turn and turn_blink)
-    draw_turn_arrow(570, 100, 'right', right_turn and turn_blink)
+    draw_turn_arrow(400, 100, 'left', turn_blink_left)
+    draw_turn_arrow(570, 100, 'right', turn_blink_right)
     
     # Fuel warning LED (below fuel meter)
     if fuel_warning:
@@ -138,7 +160,7 @@ def display():
 
 def keyboard(key, x, y):
     """Handle keyboard input"""
-    global speed, fuel_level, left_turn, right_turn, fuel_warning, last_activity_time
+    global speed, fuel_level, target_fuel, left_turn, right_turn, fuel_warning, last_activity_time
     
     last_activity_time = time.time()
     
@@ -150,50 +172,53 @@ def keyboard(key, x, y):
     if key == b'b' or key == b'B':
         speed = max(0, speed - 20)
     
-    # Refuel
+    # Refuel - set target fuel to 100 for smooth transition
     if key == b'f' or key == b'F':
-        fuel_level = 100
+        target_fuel = 100  # Fuel will gradually increase to 100
         fuel_warning = False
 
 def special_keys(key, x, y):
-    """Handle special keys (arrow keys) with smooth acceleration"""
-    global speed, target_speed, left_turn, right_turn, last_activity_time
+    """Handle special keys (arrow keys) with slow smooth acceleration"""
+    global speed, target_speed, left_turn, right_turn, last_activity_time, left_blink_time, right_blink_time
     
     last_activity_time = time.time()
     
     if key == GLUT_KEY_UP:
-        # Speed up with smooth acceleration
+        # Speed up with very smooth acceleration (slower increments)
         if target_speed < 230:
-            target_speed = min(target_speed + 10, 230)
+            target_speed = min(target_speed + 5, 230)  # Reduced from 10 to 5 for slower key response
     
     elif key == GLUT_KEY_DOWN:
-        # Slow down
+        # Slow down (slower decrements)
         if target_speed > 0:
-            target_speed = max(target_speed - 10, 0)
+            target_speed = max(target_speed - 5, 0)  # Reduced from 10 to 5 for slower key response
     
     elif key == GLUT_KEY_LEFT:
-        # Toggle left turn signal
-        left_turn = not left_turn
-        if left_turn:
-            right_turn = False
+        # Activate left turn signal and start blink timer
+        if not left_turn:
+            left_turn = True
+            left_blink_time = time.time()  # Record activation time
+            right_turn = False  # Turn off right turn
     
     elif key == GLUT_KEY_RIGHT:
-        # Toggle right turn signal
-        right_turn = not right_turn
-        if right_turn:
-            left_turn = False
+        # Activate right turn signal and start blink timer
+        if not right_turn:
+            right_turn = True
+            right_blink_time = time.time()  # Record activation time
+            left_turn = False  # Turn off left turn
     
     glutPostRedisplay()
 
 def animate(value):
-    """Animation timer function with smooth speed transitions"""
+    """Animation timer function with extra smooth speed transitions"""
     global speed, target_speed
     
-    # Smooth speed animation - gradually move toward target speed
+    # Very smooth speed animation - ultra-gradual transitions for smooth needle movement
+    # Much smaller increments for even smoother animations
     if speed < target_speed:
-        speed = min(speed + 2, target_speed)
+        speed = min(speed + 0.3, target_speed)  # Reduced from 2 to 0.3 for much smoother acceleration
     elif speed > target_speed:
-        speed = max(speed - 3, target_speed)  # Faster braking than acceleration
+        speed = max(speed - 0.5, target_speed)  # Reduced from 3 to 0.5 for much smoother deceleration
     
     glutPostRedisplay()
     glutTimerFunc(16, animate, 0)  # ~60 FPS
