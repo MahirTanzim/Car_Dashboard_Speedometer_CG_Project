@@ -213,12 +213,12 @@ def animate(value):
     """Animation timer function with extra smooth speed transitions"""
     global speed, target_speed
     
-    # Very smooth speed animation - ultra-gradual transitions for smooth needle movement
-    # Much smaller increments for even smoother animations
+    # Speed animation with faster needle movement
+    # Increased increments for quicker gauge response
     if speed < target_speed:
-        speed = min(speed + 0.3, target_speed)  # Reduced from 2 to 0.3 for much smoother acceleration
+        speed = min(speed + 1.2, target_speed)  # Increased from 0.3 for faster acceleration
     elif speed > target_speed:
-        speed = max(speed - 0.5, target_speed)  # Reduced from 3 to 0.5 for much smoother deceleration
+        speed = max(speed - 1.5, target_speed)  # Increased from 0.5 for faster deceleration
     
     glutPostRedisplay()
     glutTimerFunc(16, animate, 0)  # ~60 FPS
