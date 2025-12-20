@@ -1,7 +1,4 @@
-"""
-main.py - Enhanced Car Dashboard Main Program
-Controls the entire dashboard system with improved 3D scene
-"""
+
 
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -15,9 +12,6 @@ from scene import *
 
 
 
-# Global variables for dashboard state
-
-# Window size constants
 WINDOW_WIDTH = 1500
 WINDOW_HEIGHT = 1000
 speed = 0
@@ -31,14 +25,12 @@ last_activity_time = 0
 fuel_consumption_counter = 0
 half_circle_drawn = False
 road_offset = 0
-# Smooth animation variables
 target_speed = 0
 target_fuel = 100
 blink_counter = 0
 left_blink_time = 0
 right_blink_time = 0
 
-# Key state tracking for continuous movement
 keys_pressed = {
     'up': False,
     'down': False,
@@ -46,7 +38,6 @@ keys_pressed = {
     'right': False
 }
 
-# 3D simulation variables
 camera_z = 0.0
 oncoming_cars = []
 trees = []
@@ -54,19 +45,17 @@ clouds = []
 
 
 def initialize():
-    """Initialize OpenGL settings"""
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
     glEnable(GL_DEPTH_TEST)
-    glClearColor(0.4, 0.6, 0.9, 1.0)  # Sky blue background
+    glClearColor(0.4, 0.6, 0.9, 1.0)  
     
-    # Initialize trees on roadside
+    
     initialize_trees()
     
-    # Initialize clouds
     initialize_clouds()
 
 def initialize_trees():
-    """Create initial trees along the road"""
+    
     global trees
     tree_spacing = 30
     for i in range(30):
@@ -90,7 +79,6 @@ def initialize_trees():
 
 
 def initialize_clouds():
-    """Create initial clouds in the sky"""
     global clouds
     for i in range(15):
         clouds.append({
@@ -102,12 +90,10 @@ def initialize_clouds():
         })
 
 def update_rpm():
-    """Update RPM based on speed"""
     global rpm
     rpm = (speed / 230.0) * 7 + 0.5
 
 def update_engine_temp():
-    """Update engine temperature based on speed and RPM"""
     global engine_temp
     target_temp = 20 + (rpm * 8) + (speed * 0.2)
     if target_temp > 120:
@@ -119,7 +105,6 @@ def update_engine_temp():
         engine_temp -= 0.3
 
 def consume_fuel():
-    """Consume fuel based on speed"""
     global fuel_level, fuel_consumption_counter, fuel_warning
     
     if speed > 0:
@@ -139,33 +124,26 @@ def consume_fuel():
 
 
 def display():
-    """Main display function"""
     global blink_counter, left_turn, right_turn, left_blink_time, right_blink_time
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
-
-    # 3D Scene
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(60, WINDOW_WIDTH / WINDOW_HEIGHT, 0.1, 1000.0)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     gluLookAt(0, 2, camera_z, 0, 2, camera_z + 100, 0, 1, 0)
-
-    # Draw sky elements (clouds)
     for cloud in clouds:
         draw_cloud(cloud['x'], cloud['y'], cloud['z'], cloud['size'])
 
     draw_ground()
     draw_3d_road()
 
-    # Draw trees
     for tree in trees:
         if tree['z'] > camera_z - 50 and tree['z'] < camera_z + 500:
             draw_tree(tree['x'], 0, tree['z'], tree['height'], tree['type'])
 
-    # Draw houses
     num_houses = 10
     house_spacing = 50
     start_z = math.floor(camera_z / house_spacing) * house_spacing
@@ -174,7 +152,6 @@ def display():
         draw_3d_house(25, 0, z)
         draw_3d_house(-25, 0, z)
 
-    # Draw oncoming cars
     for car in oncoming_cars:
         draw_3d_car(car['x'], 0, car['z'], car['color'])
 
@@ -185,8 +162,6 @@ def display():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     glDisable(GL_DEPTH_TEST)
-
-    # Dashboard background
     glColor3f(0.1, 0.1, 0.1)
     glBegin(GL_QUADS)
     glVertex2f(0, 0)
@@ -197,8 +172,6 @@ def display():
 
     glColor3f(0.75, 0.75, 0.78)
     draw_half_circle_frame(750, 0, 350, thickness=10)
-
-    # Update dashboard values
     update_rpm()
     update_engine_temp()
     consume_fuel()
@@ -222,8 +195,6 @@ def display():
             right_blink_show = ((int(time_since_right // 250)) % 2) == 0
         else:
             right_turn = False
-    
-    # Draw dashboard components
     draw_speedometer(770, 210, 120, speed)
     draw_rpm_meter(560, 140, 80, rpm)
     draw_fuel_meter(980, 130, 70, fuel_level)
@@ -242,7 +213,6 @@ def display():
     glutSwapBuffers()
 
 def keyboard(key, x, y):
-    """Handle keyboard input"""
     global speed, fuel_level, target_fuel, left_turn, right_turn, fuel_warning, last_activity_time
     
     last_activity_time = time.time()
@@ -258,7 +228,6 @@ def keyboard(key, x, y):
         fuel_warning = False
 
 def special_keys(key, x, y):
-    """Handle arrow keys"""
     global keys_pressed, left_turn, right_turn, last_activity_time, left_blink_time, right_blink_time
     
     last_activity_time = time.time()
@@ -281,7 +250,6 @@ def special_keys(key, x, y):
     glutPostRedisplay()
 
 def special_keys_up(key, x, y):
-    """Handle key release"""
     global keys_pressed
     
     if key == GLUT_KEY_UP:
@@ -290,12 +258,10 @@ def special_keys_up(key, x, y):
         keys_pressed['down'] = False
 
 def animate(value):
-    """Animation timer"""
     global speed, target_speed, keys_pressed, camera_z, oncoming_cars, trees, clouds
     
     dt = 0.016
     
-    # Speed control
     if keys_pressed['up']:
         if target_speed < 230:
             target_speed += 3
@@ -304,30 +270,25 @@ def animate(value):
         if target_speed > 0:
             target_speed -= 3
     
-    # Smooth speed transition
     if speed < target_speed:
         speed = min(speed + 1.6, target_speed)
     elif speed > target_speed:
         speed = max(speed - 1.6, target_speed)
     
-    # Move camera
     v_ego = speed / 3.6
     camera_z += v_ego * dt
     
-    # Update oncoming cars
     for car in oncoming_cars:
         v_onc = 60 / 3.6
         car['z'] -= v_onc * dt
     
     oncoming_cars[:] = [car for car in oncoming_cars if car['z'] > camera_z - 10]
     
-    # Spawn new cars
     if random.random() < 0.02:
         new_z = camera_z + 300 + random.uniform(0, 100)
         new_color = (random.uniform(0.5, 1), random.uniform(0, 0.5), random.uniform(0, 0.5))
         oncoming_cars.append({'x': -3, 'z': new_z, 'color': new_color})
     
-    # Update trees (add new ones as we move forward)
     if len(trees) > 0:
         max_tree_z = max(tree['z'] for tree in trees)
         if max_tree_z < camera_z + 500:
@@ -345,10 +306,8 @@ def animate(value):
                 'type': random.choice(['pine', 'round'])
             })
     
-    # Remove trees behind camera
     trees[:] = [tree for tree in trees if tree['z'] > camera_z - 100]
     
-    # Update clouds (drift slowly)
     for cloud in clouds:
         cloud['x'] += cloud['speed'] * dt
         if cloud['x'] > 100:
@@ -357,18 +316,14 @@ def animate(value):
     glutPostRedisplay()
     glutTimerFunc(16, animate, 0)
 def initialize():
-    """Initialize OpenGL settings"""
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
     glEnable(GL_DEPTH_TEST)
-    glClearColor(0.4, 0.6, 0.9, 1.0)  # Sky blue background
+    glClearColor(0.4, 0.6, 0.9, 1.0)  
     
-    # Initialize trees on roadside
     initialize_trees()
     
-    # Initialize clouds
     initialize_clouds()
 def main():
-    """Main function"""
     global last_activity_time
     last_activity_time = time.time()
     
